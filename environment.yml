@@ -1,0 +1,28 @@
+# conda env create -f environment.yml && conda activate oso-cd
+name: oso-cd
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.12
+  - pip
+  - pdal>=2.8            # command-line tool for step 0 (CRS override, reprojection, ground class)
+  - gdal>=3.9
+  - rasterio>=1.4
+  - pyproj>=3.6
+  - geopandas>=1.0
+  - shapely>=2.0
+  - laspy>=2.5
+  - lazrs-python
+  - numpy>=1.26,<3
+  - scipy
+  - pandas
+  - matplotlib
+  - jupyterlab
+  - ipykernel
+  - nbconvert
+  - pytest
+  - ruff
+  - pip:
+      - py4dgeo>=1.2     # no conda-forge win-64 build; PyPI ships wheels
+      - -e .

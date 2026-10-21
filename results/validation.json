@@ -1,0 +1,18 @@
+{
+  "passed": false,
+  "rel_tol": 0.02,
+  "zones": [
+    {
+      "zone": "runout",
+      "reference_net_m3": 3763345.1673355103,
+      "this_net_m3": 3628993.9074401855,
+      "rel_diff": 0.03569995679945746
+    },
+    {
+      "zone": "source",
+      "reference_net_m3": -3883200.206115722,
+      "this_net_m3": -3885660.1725006104,
+      "rel_diff": 0.0006334894556850083
+    }
+  ]
+}

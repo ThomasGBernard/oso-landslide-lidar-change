@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "oso-cd"
+version = "1.0.0"
+description = "Lidar change detection and sediment budget of the 2014 Oso (SR530) landslide, Washington"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Thomas Bernard" }]
+# Compiled stacks (GDAL, PDAL) are expected from conda-forge: see environment.yml
+dependencies = [
+  "numpy>=1.26",
+  "scipy",
+  "pandas",
+  "matplotlib",
+  "laspy[lazrs]>=2.5",
+  "rasterio>=1.4",
+  "pyproj>=3.6",
+  "geopandas>=1.0",
+  "shapely>=2.0",
+  "py4dgeo>=1.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff", "jupyterlab", "ipykernel", "nbconvert"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B"]

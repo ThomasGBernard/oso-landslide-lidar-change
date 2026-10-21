@@ -1,0 +1,26 @@
+# Lidar and every product derived from it at full resolution stay out of the repository (see LICENSE-docs.md)
+data/raw/
+data/work/
+*.laz
+*.las
+*.tif
+*.tiff
+*.gdb/
+
+# Python / Jupyter
+__pycache__/
+*.egg-info/
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs written by py4dgeo at the working directory
+*.log

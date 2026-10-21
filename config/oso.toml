@@ -1,0 +1,48 @@
+# Oso (SR530) landslide, 22 March 2014: settings of the whole workflow.
+# Paths are relative to the repository root. Run with:  python -m oso_cd.pipeline config/oso.toml
+
+[paths]
+raw_t0 = ["data/raw/2013/*.laz"]          # PSLC 2013 Tulalip tiles (or one merged file), see data/README.md
+raw_t1 = ["data/raw/2014/*.laz"]          # WSDOT 2014 Oso / Stillaguamish tiles (or one merged file)
+work = "data/work"                        # large intermediate products, git-ignored
+results = "results"                       # small published results (CSV / JSON)
+figures = "figures"
+stable_areas = "inputs/stable_areas.gpkg"         # hand-drawn stable terrain (no change between the surveys)
+zones = "inputs/zones_source_runout.gpkg"         # source and runout zones (polygon_id)
+reference_volumes = "results/reference/zonal_volumes_toolbox_v0.4.1.csv"
+
+[labels]
+t0 = "2013"
+t1 = "2014"
+
+[crs]
+# The tiles are labelled EPSG:32148 (metres) but hold US survey feet: override, then convert (same datum)
+source = "EPSG:2285+6360"                 # NAD83 / Washington North (ftUS) + NAVD88 height (ftUS)
+target = "EPSG:32148+5703"                # NAD83 / Washington North (m)    + NAVD88 height (m)
+
+[registration]
+classes = [2]                             # ASPRS ground: forested valley with very few buildings
+voxel_size = 1.0                          # m, one point per voxel before ICP
+initial_distance_threshold = 2.0          # m
+level_of_detection = 0.2                  # m, supervoxels below this change are stable
+supervoxel_resolution = 15.0              # m
+min_svp_num = 5
+
+[dtm]
+resolution_m = 1.0
+idw_radius_m = 0.7071067811865476         # res / sqrt(2): circle through the cell corners
+idw_power = 1.0
+fill_max_search_px = 50
+footprint_cell_m = 5.0
+footprint_closing_cells = 3
+
+[uncertainty]
+slope_bins_deg = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 60, 90]
+max_slope_deg = 45.0                      # steeper cells: no σ, never significant
+min_cells_per_bin = 200
+interp_distance_bins_m = [0, 2, 4, 8, 16, 32, 64]
+lod_k = 1.96                              # 95 % confidence
+conservative_interp_bias_m = 1.0          # stated as a separate, conservative uncertainty term
+
+[validation]
+rel_tol = 0.02                            # zonal net volumes within 2 % of the toolbox reference run

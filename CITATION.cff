@@ -1,0 +1,57 @@
+cff-version: 1.2.0
+message: "If you use this code or its results, please cite it as below, and cite the data and methods listed in the README."
+title: "Oso (SR530) landslide: lidar change detection and sediment budget"
+type: software
+version: 1.0.0
+license: MIT
+authors:
+  - family-names: Bernard
+    given-names: Thomas
+keywords:
+  - lidar
+  - change detection
+  - DEM of difference
+  - sediment budget
+  - landslide
+  - Oso
+  - uncertainty
+references:
+  - type: report
+    title: "Geomorphic response of the North Fork Stillaguamish River to the State Route 530 landslide near Oso, Washington"
+    authors:
+      - family-names: Anderson
+        given-names: Scott W.
+      - family-names: Keith
+        given-names: Mackenzie K.
+      - family-names: Magirl
+        given-names: Christopher S.
+      - family-names: Wallick
+        given-names: J. Rose
+      - family-names: Mastin
+        given-names: Mark C.
+      - family-names: Foreman
+        given-names: James R.
+    year: 2017
+    institution:
+      name: U.S. Geological Survey
+    doi: 10.3133/sir20175055
+  - type: article
+    title: "Landslide mobility and hazards: implications of the 2014 Oso disaster"
+    authors:
+      - family-names: Iverson
+        given-names: Richard M.
+      - name: "et al."
+    journal: Earth and Planetary Science Letters
+    volume: 412
+    year: 2015
+    doi: 10.1016/j.epsl.2014.12.020
+  - type: article
+    title: "py4dgeo: Open-source scientific software for topographic change analysis in 3D/4D geographic point clouds"
+    authors:
+      - family-names: Anders
+        given-names: Katharina
+      - name: "et al."
+    journal: SoftwareX
+    volume: 34
+    year: 2026
+    doi: 10.1016/j.softx.2026.102670
