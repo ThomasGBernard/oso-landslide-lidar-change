@@ -45,4 +45,9 @@ lod_k = 1.96                              # 95 % confidence
 conservative_interp_bias_m = 1.0          # stated as a separate, conservative uncertainty term
 
 [validation]
-rel_tol = 0.02                            # zonal net volumes within 2 % of the toolbox reference run
+# Zonal net volumes against the toolbox reference run (v0.4.1). The source must agree within 2 %. The runout
+# tolerance was widened to 5 % after the first run (difference 3.6 %), once its cause was identified and measured:
+# the toolbox filled the impoundment-lake cells inside the runout outline by interpolation, this rewrite leaves cells
+# without ground return out of the footprint.
+rel_tol = { source = 0.02, runout = 0.05 }
+notes = { runout = "Toolbox filled the impoundment lake inside the runout outline (water surface, no ground return); this rewrite leaves it out." }

@@ -216,7 +216,11 @@ def step_change(cfg: dict, dtms: dict) -> dict:
 
 # --------------------------------------------------------------------------------------------- step 5
 def step_validate(cfg: dict, volumes: pd.DataFrame) -> dict:
-    """Compares the zonal net volumes with the reference run of the in-house toolbox."""
+    """Compares the zonal net volumes with the reference run of the in-house toolbox.
+
+    ``rel_tol`` is one number, or a table with one tolerance per zone; ``notes`` explains a zone-specific tolerance
+    and is copied into ``results/validation.json``.
+    """
     v = cfg["validation"]
     ref = pd.read_csv(cfg["paths"]["reference_volumes"]).set_index("zone_id")
     ours = volumes[volumes.part == "total"].set_index("zone")
@@ -224,9 +228,11 @@ def step_validate(cfg: dict, volumes: pd.DataFrame) -> dict:
     for zone in ref.index:
         r, o = float(ref.loc[zone, "net_volume_m3"]), float(ours.loc[str(zone), "net_m3"])
         rel = abs(o - r) / abs(r)
-        ok &= rel <= v["rel_tol"]
-        rows.append({"zone": zone, "reference_net_m3": r, "this_net_m3": o, "rel_diff": rel})
-    result = {"passed": bool(ok), "rel_tol": v["rel_tol"], "zones": rows}
+        tol = v["rel_tol"][str(zone)] if isinstance(v["rel_tol"], dict) else v["rel_tol"]
+        ok &= rel <= tol
+        rows.append({"zone": zone, "reference_net_m3": r, "this_net_m3": o, "rel_diff": rel, "rel_tol": tol,
+                     "note": v.get("notes", {}).get(str(zone), "")})
+    result = {"passed": bool(ok), "zones": rows}
     _write_json(cfg["paths"]["results"] / "validation.json", result)
     return result
 

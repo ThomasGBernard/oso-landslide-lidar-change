@@ -6,8 +6,9 @@
 
 How much material left the source of the 2014 Oso landslide, and how much stayed on the valley floor? This repository
 answers with repeat airborne lidar (2013 against spring 2014), a DEM of difference thresholded by a spatially
-varying Level of Detection, and a budget whose uncertainty is stated term by term. The result matches the published
-estimates within a few percent.
+varying Level of Detection, and a budget whose uncertainty is stated term by term. The volume that left the source
+matches the published estimate; the valley-floor deposit comes out 7 % below it, because the part of the deposit
+still under the impoundment lake in April 2014 returned no ground points.
 
 ![Significant elevation change 2013–2014](figures/dod_map.png)
 
@@ -25,7 +26,7 @@ al., 2017).
 |---|---|---|
 | Survey | Puget Sound LiDAR Consortium, 2013 Tulalip Partnership | Washington State DOT, 2014 Stillaguamish lidar including Oso |
 | Vendor | Watershed Sciences Inc. | Quantum Spatial |
-| Dates | 17 April – 31 July 2013 | flights 24 March – 9 April 2014; this area at least 3 and 6 April |
+| Dates | 17 April – 31 July 2013 | flights 24 March – 9 April 2014; this area 3 and 6 April (86 % of points) and a Monday (14 %) |
 | Ground points used | 10.8 M (1.2 pts/m² under the forest) | 15.7 M |
 
 Neither survey is redistributed here; `data/README.md` says where to download them (free account) and under which
@@ -98,9 +99,13 @@ Two points of interpretation:
 - **A DoD measures what left, not what moved.** Iverson et al. (2015) estimate 8.3 Mm³ mobilised, but about 4.5 Mm³
   of it slid and stayed in the source area, where it barely changes the surface elevation. The mobilised volume needs
   a basal slip surface; differencing gives the volume that left.
-- **The 2014 surface is about two weeks old.** The post-event cloud comes from flights of 3 and 6 April 2014, not
-  from the 24 March emergency flight, so a little erosion of the deposit by the river had already happened.
-  The runout gain is still within 8 % of the deposit volume of Anderson et al. (2017).
+- **The 2014 surface is about two weeks old.** 86 % of the post-event points were flown on 3 and 6 April 2014;
+  the other 14 % on a Monday, either 7 April or the 24 March emergency flight (GPS week time cannot tell them
+  apart). By then the river had already started to erode the deposit.
+- **Part of the deposit was under water.** The debris dammed the river, and the impoundment lake still covered the
+  upstream (eastern) end of the deposit in April 2014. Lidar returns no ground there, so those cells are left out
+  (the white area on the map). Anderson et al. (2017) measured the deposit after the lake had drained. The runout
+  gain of 3.63 Mm³ is therefore a lower bound of the deposit, 7 % below their ≈ 3.9 Mm³.
 
 A point-based cross-check with M3C2 (Lague et al., 2013), run in the author's in-house toolbox, gives 3.14 Mm³ of
 erosion over the whole site: a lower bound, because M3C2 finds no distance where the 2013 survey has no ground points
@@ -112,9 +117,9 @@ under the forest, whereas the DoD fills those cells.
   volumes is not quantified.
 - The interpolated share is large under the forest; the conservative term above bounds it but is not a
   statistical confidence interval.
-- The 2014 cloud mixes at least two flights; any change between them inside the slide is part of the result.
-- The impoundment lake upstream of the deposit is a water surface in 2014 (flat at 87.6 m): it lies outside both
-  zones and is not part of the budget.
+- The 2014 cloud mixes flights of up to three days; any change between them inside the slide is part of the result.
+- The impoundment lake (a water surface at 87.6 m in 2014) has no ground return: the cells it covers, including the
+  eastern end of the runout zone, are left out, so the runout gain is a lower bound.
 
 ## Reproduce
 
@@ -139,7 +144,9 @@ intermediate products go to the git-ignored `data/work/`. A full run takes about
 | `scripts/check_flight_dates.py` | GPS time to flight days |
 
 This repository is a lean, readable rewrite of the Package 1 workflow of the author's in-house toolbox (v0.4.1). It
-reproduces the toolbox's zonal volumes within 2 % (`results/validation.json`).
+reproduces the toolbox's source volume within 0.1 % and its runout volume within 3.6 % (`results/validation.json`).
+The runout difference is the lake: the toolbox filled the lake cells inside the runout outline by interpolation
+(a water surface, not deposit), whereas this rewrite leaves cells without ground return out of the footprint.
 
 ## References
 

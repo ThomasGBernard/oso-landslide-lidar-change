@@ -32,8 +32,7 @@ X 1,389,745 - 1,399,054, Y 462,123 - 475,846.
 
 The 2014 files store GPS week time. In the merged cloud it runs from 81,371 s to 410,925 s, that is from Sunday
 15:36 to Thursday 11:09 local time (UTC-7). The only Sunday flight is 6 April and the only Thursday flight 3 April,
-so the cloud is a mosaic of at least two flights, both about two weeks after the slide. `scripts/check_flight_dates.py`
-gives the share of points per day and hour:
+so the cloud is a mosaic of flights; `scripts/check_flight_dates.py` gives the share of points per day and hour:
 
 | Day | Local hours | Share of points | Flight |
 |---|---|---|---|
