@@ -1,6 +1,6 @@
 # Oso (SR530) landslide: lidar change detection and sediment budget
 
-[![tests](https://github.com/GITHUB_USER/oso-landslide-lidar-change/actions/workflows/ci.yml/badge.svg)](https://github.com/GITHUB_USER/oso-landslide-lidar-change/actions/workflows/ci.yml)
+[![tests](https://github.com/ThomasGBernard/oso-landslide-lidar-change/actions/workflows/ci.yml/badge.svg)](https://github.com/ThomasGBernard/oso-landslide-lidar-change/actions/workflows/ci.yml)
 [![Code: MIT](https://img.shields.io/badge/code-MIT-blue.svg)](LICENSE)
 [![Text and figures: CC BY 4.0](https://img.shields.io/badge/text%20%26%20figures-CC%20BY%204.0-lightgrey.svg)](LICENSE-docs.md)
 
@@ -203,4 +203,4 @@ BibTeX of all of them: `references.bib`. How to cite this work: `CITATION.cff`.
 ## Author
 
 Thomas Bernard, PhD in geomorphology and remote sensing (lidar), river morphodynamics and sediment transport,
-Trento, Italy. WEBSITE_URL
+Trento, Italy. https://thomasgbernard.github.io/home

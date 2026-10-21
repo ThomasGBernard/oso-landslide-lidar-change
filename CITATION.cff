@@ -4,6 +4,8 @@ title: "Oso (SR530) landslide: lidar change detection and sediment budget"
 type: software
 version: 1.0.0
 license: MIT
+repository-code: https://github.com/ThomasGBernard/oso-landslide-lidar-change
+date-released: 2026-10-21
 authors:
   - family-names: Bernard
     given-names: Thomas
