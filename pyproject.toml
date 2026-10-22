@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "oso-cd"
-version = "1.0.0"
+version = "1.1.0"
 description = "Lidar change detection and sediment budget of the 2014 Oso (SR530) landslide, Washington"
 readme = "README.md"
 requires-python = ">=3.11"

@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from oso_cd import dod
+from oso_cd import dod, water
 from oso_cd import uncertainty as unc
 from oso_cd.dtm import Grid, IdwAccumulator, occupancy_footprint, slope_deg
 from oso_cd.prepare import build_pipeline
@@ -149,3 +149,47 @@ def test_pdal_pipeline_overrides_crs_and_keeps_ground():
                      "writers.las"]
     assert all(s["override_srs"] == "EPSG:2285+6360" for s in p["pipeline"][:2])
     assert p["pipeline"][4]["limits"] == "Classification[2:2]"
+
+
+def test_water_points_counted_on_grid():
+    grid = Grid.from_bounds(0, 0, 4, 3, 1.0)
+    counts = water.count_on_grid(np.array([0.2, 0.8, 1.5, -1.0, 4.5]), np.array([2.5, 2.9, 1.5, 2.5, 2.5]), grid)
+    assert counts[0, 0] == 2 and counts[1, 1] == 1 and counts.sum() == 3   # points outside the grid ignored
+
+
+def test_water_mask_closes_gaps_fills_small_holes_keeps_islands():
+    sparse = np.zeros((60, 60), int)
+    sparse[10:50:2, 10:50:2] = 1          # a return every other cell
+    assert water.mask_from_counts(sparse, 1.0, closing_m=2.0, max_hole_m2=0, buffer_m=0)[11:48, 11:48].all()
+    lake = np.zeros((60, 60), int)
+    lake[10:50, 10:50] = 1
+    lake[20:22, 20:22] = 0                # 4 m2 dropout: filled
+    lake[30:40, 30:40] = 0                # 100 m2 island: kept
+    m = water.mask_from_counts(lake, 1.0, closing_m=0, max_hole_m2=50, buffer_m=0)
+    assert m[20:22, 20:22].all() and not m[32:38, 32:38].any()
+    b = water.mask_from_counts(lake, 1.0, closing_m=0, max_hole_m2=50, buffer_m=2.0)
+    assert b[8, 20] and not b[7, 20]      # 2 m buffer
+
+
+def test_t1_water_leaves_the_budget_and_t0_water_is_flagged():
+    z0 = np.zeros((4, 4))
+    z1 = np.zeros((4, 4))
+    z1[0, :] = 1.0                        # water level rise in t1 (row 0 is water in 2014)
+    z1[3, :2] = 2.0                       # deposit in a former channel (water in t0 only)
+    sig = np.full((4, 4), 0.1)
+    change = dod.compute_dod(z0, z1, sig, sig)
+    w0, w1 = np.zeros((4, 4), bool), np.zeros((4, 4), bool)
+    w1[0, :] = True
+    w0[3, :2] = True
+    classes = water.dod_water(w0, w1, np.isfinite(change["raw"]))
+    kept, left_out = water.leave_out_t1_water(change["significant"], classes)
+    table = dod.zonal_volumes(kept, np.ones((4, 4), np.uint8), {"all": np.ones((4, 4), bool)}, 1.0,
+                              water=classes, left_out=left_out).set_index("part")
+    assert table.loc["total", "deposition_m3"] == pytest.approx(4.0)            # the t1 water is not counted
+    assert table.loc["water_t1_left_out", "deposition_m3"] == pytest.approx(4.0)
+    assert table.loc["water_t0_only", "deposition_m3"] == pytest.approx(4.0)    # kept, inside the total
+
+
+def test_pdal_pipeline_for_water_points():
+    p = build_pipeline(["a.laz"], "w.laz", "EPSG:2285+6360", "EPSG:32148+5703", classes=[9])
+    assert p["pipeline"][2]["limits"] == "Classification[9:9]"

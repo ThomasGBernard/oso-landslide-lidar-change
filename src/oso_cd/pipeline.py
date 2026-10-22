@@ -19,7 +19,7 @@ import pandas as pd
 
 from . import dod as dodm
 from . import dtm as dtmm
-from . import plots, prepare, registration
+from . import plots, prepare, registration, water
 from . import uncertainty as unc
 
 
@@ -144,7 +144,6 @@ def step_dtm(cfg: dict, clouds: dict[str, Path], force: bool = False) -> dict:
     return {"grid": grid, "outputs": outputs}
 
 
-# --------------------------------------------------------------------------------------------- steps 3-4
 def _rasterize(gdf, column: str | None, grid: dtmm.Grid) -> np.ndarray:
     from rasterio.features import rasterize
 
@@ -153,8 +152,61 @@ def _rasterize(gdf, column: str | None, grid: dtmm.Grid) -> np.ndarray:
                      transform=grid.transform, fill=0, dtype="int32")
 
 
-def step_change(cfg: dict, dtms: dict) -> dict:
-    """Error model on stable areas, LoD-thresholded DoD, zonal budget with its uncertainty."""
+# --------------------------------------------------------------------------------------------- step 2b
+def step_water(cfg: dict, dtms: dict, force: bool = False) -> dict:
+    """Water mask of each epoch on the DTM grid: its water-class points if it has any, else its drawn polygon."""
+    import geopandas as gpd
+    import laspy
+    from pyproj import CRS
+
+    w, labels, grid, work = cfg["water"], _labels(cfg), dtms["grid"], cfg["paths"]["work"]
+    outputs = {lab: work / f"water_{lab}.tif" for lab in labels}
+    summary_path = cfg["paths"]["results"] / "water_summary.json"
+    if not force and summary_path.exists() and all(p.exists() for p in outputs.values()):
+        return {"masks": {lab: dtmm.read_raster(p) > 0 for lab, p in outputs.items()},
+                "summary": json.loads(summary_path.read_text(encoding="utf-8"))}
+
+    crs = CRS.from_user_input(cfg["crs"]["target"])
+    reg = json.loads((cfg["paths"]["results"] / "registration.json").read_text(encoding="utf-8"))
+    masks, summary = {}, {}
+    for lab, raw_key, epoch in zip(labels, ("raw_t0", "raw_t1"), ("t0", "t1"), strict=True):
+        valid = dtmm.read_raster(dtms["outputs"][lab]["source"]) > 0
+        points = work / f"{lab}_water_m.laz"
+        if force or not points.exists():
+            pipe = prepare.build_pipeline(_expand(cfg["paths"][raw_key]), points, cfg["crs"]["source"],
+                                          cfg["crs"]["target"], classes=w["classes"])
+            prepare.run_pipeline(pipe, record=work / f"{lab}_water_pipeline.json")
+        las = laspy.read(str(points))
+        xyz = np.column_stack((las.x, las.y, las.z)).astype(np.float64)
+        if epoch == "t1" and len(xyz):   # moved like the t1 ground cloud (step 1)
+            xyz = registration.apply_transform(xyz, reg["affine"], reg["reduction_point_m"])
+        polygons = cfg["paths"].get(f"water_polygons_{epoch}")
+        if len(xyz):
+            counts = water.count_on_grid(xyz[:, 0], xyz[:, 1], grid)
+            masks[lab] = water.mask_from_counts(counts, grid.res, valid, closing_m=w["closing_m"],
+                                                max_hole_m2=w["max_hole_m2"], buffer_m=w["buffer_m"])
+            source = f"points of ASPRS classes {w['classes']}"
+        elif polygons is not None:
+            gdf = gpd.read_file(polygons).to_crs(crs.sub_crs_list[0])
+            masks[lab] = water.buffer_mask(_rasterize(gdf, None, grid) > 0, grid.res, w["buffer_m"], valid)
+            source = f"polygon drawn for {lab} ({polygons.name})"
+        else:
+            masks[lab] = np.zeros(grid.shape, dtype=bool)
+            source = "none: no water point and no polygon"
+        dtmm.write_raster(outputs[lab], masks[lab].astype(np.uint8), grid, crs.to_wkt())
+        summary[lab] = {"source": source, "water_points": int(len(xyz)),
+                        "water_area_m2": float(masks[lab].sum() * grid.res**2)}
+    _write_json(summary_path, summary)
+    return {"masks": masks, "summary": summary}
+
+
+# --------------------------------------------------------------------------------------------- steps 3-4
+def step_change(cfg: dict, dtms: dict, water_masks: dict | None = None) -> dict:
+    """Error model on stable areas, LoD-thresholded DoD, zonal budget with its uncertainty.
+
+    With the water masks of ``step_water``, cells where t1 is water leave the budget (reported as the part
+    ``water_t1_left_out``) and cells that were water in t0 only are flagged (part ``water_t0_only``).
+    """
     import geopandas as gpd
     from pyproj import CRS
 
@@ -186,6 +238,11 @@ def step_change(cfg: dict, dtms: dict) -> dict:
     sig1 = unc.epoch_sigma(sigma_dod, s1 == dtmm.SOURCE_INTERPOLATED, d1, interp_fit)
     change = dodm.compute_dod(z0, z1, sig0, sig1, k=u["lod_k"])
     source = dodm.dod_source(s0, s1, change["raw"])
+    water_class, left_out = None, None
+    if water_masks is not None:
+        m = water_masks["masks"]
+        water_class = water.dod_water(m[labels[0]], m[labels[1]], np.isfinite(change["raw"]))
+        change["significant"], left_out = water.leave_out_t1_water(change["significant"], water_class)
 
     stable_measured = raw[st & measured]
     stable_interp = raw[st & ~measured]
@@ -201,7 +258,8 @@ def step_change(cfg: dict, dtms: dict) -> dict:
     zone_masks = {str(z.polygon_id): _rasterize(zones_gdf.iloc[[i]], None, grid) > 0
                   for i, z in enumerate(zones_gdf.itertuples())}
     zone_areas = {str(z.polygon_id): float(z.geometry.area) for z in zones_gdf.itertuples()}
-    volumes = dodm.zonal_volumes(change["significant"], source, zone_masks, grid.res**2, zone_areas)
+    volumes = dodm.zonal_volumes(change["significant"], source, zone_masks, grid.res**2, zone_areas,
+                                 water=water_class, left_out=left_out)
     volumes.to_csv(res_dir / "zonal_volumes.csv", index=False, float_format="%.1f")
     uncertainty = dodm.volume_uncertainty(volumes, sys_err["sigma_sys_m"], error_model["stable_interpolated_nmad_m"],
                                           u.get("conservative_interp_bias_m", 1.0))
@@ -210,7 +268,9 @@ def step_change(cfg: dict, dtms: dict) -> dict:
     crs_wkt = CRS.from_user_input(cfg["crs"]["target"]).to_wkt()
     dtmm.write_raster(work / "dod_significant.tif", change["significant"], grid, crs_wkt)
     dtmm.write_raster(work / "dod_lod.tif", change["lod"], grid, crs_wkt)
-    return {"grid": grid, "z1": z1, "significant": change["significant"], "zones": zones_gdf,
+    if water_class is not None:
+        dtmm.write_raster(work / "dod_water.tif", water_class, grid, crs_wkt)
+    return {"grid": grid, "z1": z1, "significant": change["significant"], "zones": zones_gdf, "water": water_class,
             "volumes": volumes, "uncertainty": uncertainty, "error_model": error_model}
 
 
@@ -244,7 +304,8 @@ def step_figures(cfg: dict, change: dict) -> list[Path]:
     t0, t1 = _labels(cfg)
     return [
         plots.dod_map(change["significant"], shade, extent, change["zones"], fig / "dod_map.png",
-                      title=f"Significant elevation change {t0}–{t1} (95 % LoD)"),
+                      title=f"Significant elevation change {t0}–{t1} (95 % LoD)", water=change.get("water"),
+                      labels=(t0, t1)),
         plots.error_model(change["error_model"]["slope_model"], fig / "error_model.png"),
         plots.budget_vs_published(change["volumes"], change["uncertainty"], fig / "budget_vs_published.png"),
     ]
@@ -256,7 +317,8 @@ def run(config: str | Path, force: bool = False) -> dict:
     ground = step_prepare(cfg, force)
     registered = step_register(cfg, ground, force)
     dtms = step_dtm(cfg, {t0: ground[t0], t1: registered}, force)
-    change = step_change(cfg, dtms)
+    water_masks = step_water(cfg, dtms, force) if "water" in cfg else None
+    change = step_change(cfg, dtms, water_masks)
     validation = step_validate(cfg, change["volumes"])
     step_figures(cfg, change)
     print(change["volumes"][change["volumes"].part == "total"].to_string(index=False))

@@ -6,7 +6,9 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import TwoSlopeNorm
+from matplotlib.colors import ListedColormap, TwoSlopeNorm
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 
 from .uncertainty import slope_model
 
@@ -28,12 +30,29 @@ def _save(fig, path: str | Path) -> Path:
 
 
 def dod_map(significant: np.ndarray, shade: np.ndarray, extent, zones_gdf, path: str | Path,
-            vlim_m: float = 30.0, title: str = "") -> Path:
-    """Significant change over a hillshade, zones outlined; colour range ±``vlim_m``."""
+            vlim_m: float = 30.0, title: str = "", water: np.ndarray | None = None,
+            labels: tuple[str, str] = ("2013", "2014")) -> Path:
+    """Significant change over a hillshade, zones outlined; colour range ±``vlim_m``.
+
+    With ``water`` (DoD water classes): water in t1 in grey (left out of the budget), water in t0 only outlined in
+    blue (kept, flagged).
+    """
     fig, ax = plt.subplots(figsize=(8, 9))
     ax.imshow(shade, cmap="gray", extent=extent, interpolation="nearest")
     im = ax.imshow(significant, cmap="RdBu", norm=TwoSlopeNorm(0, -vlim_m, vlim_m), extent=extent,
                    interpolation="nearest", alpha=0.85)
+    handles = []
+    if water is not None:
+        t1 = np.isin(water, (1, 3))
+        if t1.any():
+            ax.imshow(np.where(t1, 1.0, np.nan), cmap=ListedColormap(["#8c8c8c"]), extent=extent,
+                      interpolation="nearest")
+            handles.append(Patch(facecolor="#8c8c8c", label=f"Water in {labels[1]}: left out"))
+        t0_only = water == 2
+        if t0_only.any():
+            ax.contour(t0_only.astype(float), levels=[0.5], colors="tab:blue", linewidths=0.8, extent=extent,
+                       origin="upper")
+            handles.append(Line2D([], [], color="tab:blue", label=f"Water in {labels[0]} only: kept, flagged"))
     if zones_gdf is not None:
         zones_gdf.boundary.plot(ax=ax, color="k", linewidth=1.0)
         for _, z in zones_gdf.iterrows():
@@ -45,6 +64,8 @@ def dod_map(significant: np.ndarray, shade: np.ndarray, extent, zones_gdf, path:
     ax.set_ylabel("Northing (m)")
     ax.set_title(title)
     ax.ticklabel_format(style="plain", useOffset=False)
+    if handles:
+        ax.legend(handles=handles, loc="lower right", fontsize=8)
     return _save(fig, path)
 
 

@@ -3,7 +3,8 @@
 dDEM = Z_t1 − Z_t0 (positive = deposition). A cell is significant when |dDEM| > LoD = k · sqrt(σ0² + σ1²), with
 per-cell σ of each epoch from ``uncertainty.epoch_sigma`` (Brasington et al., 2003; Lane et al., 2003;
 Wheaton et al., 2010). Volumes are summed over significant cells only and split by DTM source: measured in both
-epochs, or interpolated in at least one.
+epochs, or interpolated in at least one. With water masks (``water.py``) two more parts are reported: the change
+left out where t1 is water, and the change kept in cells that were water in t0 only.
 
 References: brasington2003sediment, lane2003braided, wheaton2010dod (see references.bib).
 """
@@ -12,6 +13,8 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+
+from .water import T0_ONLY
 
 SOURCE_NODATA, SOURCE_MEASURED, SOURCE_INTERPOLATED = 0, 1, 2
 
@@ -45,16 +48,24 @@ def _volumes(values: np.ndarray, cell_area_m2: float) -> dict[str, float]:
 
 
 def zonal_volumes(significant: np.ndarray, source: np.ndarray, zones: dict[str, np.ndarray],
-                  cell_area_m2: float, zone_areas_m2: dict[str, float] | None = None) -> pd.DataFrame:
-    """One row per zone and part (total, measured, interpolated) of the significant dDEM."""
+                  cell_area_m2: float, zone_areas_m2: dict[str, float] | None = None,
+                  water: np.ndarray | None = None, left_out: np.ndarray | None = None) -> pd.DataFrame:
+    """One row per zone and part (total, measured, interpolated) of the significant dDEM.
+
+    With ``water`` (DoD water classes, ``water.dod_water``) and ``left_out`` (the significant change where t1 is
+    water, ``water.leave_out_t1_water``): part ``water_t0_only`` is the change kept in cells that were water in t0
+    only (inside the total), part ``water_t1_left_out`` the change left out where t1 is water (not in the total).
+    """
     rows = []
     for name, mask in zones.items():
-        parts = {"total": mask, "measured": mask & (source == SOURCE_MEASURED),
-                 "interpolated": mask & (source == SOURCE_INTERPOLATED)}
-        for part, sel in parts.items():
-            rows.append({"zone": name, "part": part,
-                         "zone_area_m2": (zone_areas_m2 or {}).get(name, float(mask.sum() * cell_area_m2)),
-                         **_volumes(significant[sel], cell_area_m2)})
+        area = (zone_areas_m2 or {}).get(name, float(mask.sum() * cell_area_m2))
+        parts = {"total": (significant, mask), "measured": (significant, mask & (source == SOURCE_MEASURED)),
+                 "interpolated": (significant, mask & (source == SOURCE_INTERPOLATED))}
+        if water is not None:
+            parts["water_t0_only"] = (significant, mask & (water == T0_ONLY))
+            parts["water_t1_left_out"] = (left_out, mask)
+        for part, (values, sel) in parts.items():
+            rows.append({"zone": name, "part": part, "zone_area_m2": area, **_volumes(values[sel], cell_area_m2)})
     return pd.DataFrame(rows)
 
 

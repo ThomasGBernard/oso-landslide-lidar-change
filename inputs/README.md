@@ -1,6 +1,6 @@
 # Inputs drawn for this study
 
-Both GeoPackages are in NAD83 / Washington North (EPSG:32148, metres) and carry a `polygon_id` column.
+The GeoPackages are in NAD83 / Washington North (EPSG:32148, metres) and carry a `polygon_id` column.
 
 - `stable_areas.gpkg`: 8 polygons of terrain assumed unchanged between 2013 and 2014, drawn by the author over the
   hillshades away from the slide and the river. They hold about 230,000 one-metre cells and carry the whole error
@@ -9,3 +9,6 @@ Both GeoPackages are in NAD83 / Washington North (EPSG:32148, metres) and carry 
   (`NewLandslidePoly`, Haugerud 2014, mapped from news photographs and described by USGS as not precise), converted
   from US survey feet. `source` is the convex hull of the USGS headscarp line and of the significant erosion deeper
   than 2 m within 400 m of it, minus the runout zone.
+- `water_2013.gpkg`: the North Fork Stillaguamish channel in 2013 (one polygon, about 0.24 km²), drawn by the author
+  over the 2013 DTM hillshade, because the 2013 delivery has no water class. The 2014 water comes from the delivered
+  class 9 points.

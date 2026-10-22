@@ -3,17 +3,17 @@
   "zones": [
     {
       "zone": "runout",
-      "reference_net_m3": 3763345.1673355103,
-      "this_net_m3": 3628993.9074401855,
-      "rel_diff": 0.03569995679945746,
+      "reference_net_m3": 3461668.66003418,
+      "this_net_m3": 3442749.30191803,
+      "rel_diff": 0.005465386775626168,
       "rel_tol": 0.05,
-      "note": "Toolbox filled the impoundment lake inside the runout outline (water surface, no ground return); this rewrite leaves it out."
+      "note": ""
     },
     {
       "zone": "source",
-      "reference_net_m3": -3883200.206115722,
-      "this_net_m3": -3885660.1725006104,
-      "rel_diff": 0.0006334894556850083,
+      "reference_net_m3": -3883072.5441207886,
+      "this_net_m3": -3885535.332939148,
+      "rel_diff": 0.0006342371383424679,
       "rel_tol": 0.02,
       "note": ""
     }

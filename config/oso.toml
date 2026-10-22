@@ -9,7 +9,8 @@ results = "results"                       # small published results (CSV / JSON)
 figures = "figures"
 stable_areas = "inputs/stable_areas.gpkg"         # hand-drawn stable terrain (no change between the surveys)
 zones = "inputs/zones_source_runout.gpkg"         # source and runout zones (polygon_id)
-reference_volumes = "results/reference/zonal_volumes_toolbox_v0.4.1.csv"
+water_polygons_t0 = "inputs/water_2013.gpkg"    # 2013 river, drawn: the 2013 delivery has no water class
+reference_volumes = "results/reference/zonal_volumes_toolbox_v0.7.0.csv"
 
 [labels]
 t0 = "2013"
@@ -36,6 +37,13 @@ fill_max_search_px = 50
 footprint_cell_m = 5.0
 footprint_closing_cells = 3
 
+[water]
+# Water mask of each epoch: points of these ASPRS classes if the epoch has any (2014), else its drawn polygon (2013).
+classes = [9]                             # ASPRS water
+closing_m = 2.0                           # closes the gaps between sparse water returns
+max_hole_m2 = 50.0                        # holes in the water up to this area are filled (larger: islands kept)
+buffer_m = 1.0                            # shore cells, where the DTM mixes ground and water
+
 [uncertainty]
 slope_bins_deg = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 60, 90]
 max_slope_deg = 45.0                      # steeper cells: no σ, never significant
@@ -45,9 +53,8 @@ lod_k = 1.96                              # 95 % confidence
 conservative_interp_bias_m = 1.0          # stated as a separate, conservative uncertainty term
 
 [validation]
-# Zonal net volumes against the toolbox reference run (v0.4.1). The source must agree within 2 %. The runout
-# tolerance was widened to 5 % after the first run (difference 3.6 %), once its cause was identified and measured:
-# the toolbox filled the impoundment-lake cells inside the runout outline by interpolation, this rewrite leaves cells
-# without ground return out of the footprint.
+# Zonal net volumes against the toolbox reference run (v0.7.0, water masks per epoch). Both leave out the cells where
+# 2014 is water. The source must agree within 2 %, the runout within 5 % (its outline crosses the lake and the river,
+# where the two implementations differ in footprint and stable areas).
 rel_tol = { source = 0.02, runout = 0.05 }
-notes = { runout = "Toolbox filled the impoundment lake inside the runout outline (water surface, no ground return); this rewrite leaves it out." }
+notes = {}
