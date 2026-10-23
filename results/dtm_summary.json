@@ -2,22 +2,22 @@
   "grid": {
     "x0": 423597.0,
     "y_top": 144588.0,
-    "res": 1.0,
-    "nx": 2829,
-    "ny": 3500
+    "res": 3.0,
+    "nx": 943,
+    "ny": 1167
   },
   "epochs": {
     "2013": {
-      "cells": 8268925,
-      "measured_pct": 64.40447821210132,
-      "mean_points_per_measured_cell": 2.93853320159127,
-      "max_interp_distance_m": 12.165525060596439
+      "cells": 920572,
+      "measured_pct": 94.98029486015217,
+      "mean_points_per_measured_cell": 17.94562435238494,
+      "max_interp_distance_m": 10.816653826391967
     },
     "2014": {
-      "cells": 8268925,
-      "measured_pct": 71.8982334463065,
-      "mean_points_per_measured_cell": 3.497350556607663,
-      "max_interp_distance_m": 39.698866482558415
+      "cells": 920572,
+      "measured_pct": 95.47053353784386,
+      "mean_points_per_measured_cell": 23.654548143934008,
+      "max_interp_distance_m": 38.41874542459709
     }
   }
 }

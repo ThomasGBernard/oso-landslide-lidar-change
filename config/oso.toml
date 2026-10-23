@@ -10,7 +10,7 @@ figures = "figures"
 stable_areas = "inputs/stable_areas.gpkg"         # hand-drawn stable terrain (no change between the surveys)
 zones = "inputs/zones_source_runout.gpkg"         # source and runout zones (polygon_id)
 water_polygons_t0 = "inputs/water_2013.gpkg"    # 2013 river, drawn: the 2013 delivery has no water class
-reference_volumes = "results/reference/zonal_volumes_toolbox_v0.7.0.csv"
+reference_volumes = "results/reference/zonal_volumes_toolbox_v0.9.0_3m.csv"
 
 [labels]
 t0 = "2013"
@@ -30,11 +30,12 @@ supervoxel_resolution = 15.0              # m
 min_svp_num = 5
 
 [dtm]
-resolution_m = 1.0
-idw_radius_m = 0.7071067811865476         # res / sqrt(2): circle through the cell corners
+resolution_m = 3.0                        # finest cell with >= 90 % of the area measured in both epochs (toolbox v0.9.0,
+                                          # step 8b); 2013 is the limiting epoch (about 1 ground point per m2)
+idw_radius_m = 2.1213203435596424         # res / sqrt(2): circle through the cell corners
 idw_power = 1.0
 fill_max_search_px = 50
-footprint_cell_m = 5.0
+footprint_cell_m = 6.0                    # a multiple of the 3 m cell
 footprint_closing_cells = 3
 
 [water]
@@ -53,7 +54,7 @@ lod_k = 1.96                              # 95 % confidence
 conservative_interp_bias_m = 1.0          # stated as a separate, conservative uncertainty term
 
 [validation]
-# Zonal net volumes against the toolbox reference run (v0.7.0, water masks per epoch). Both leave out the cells where
+# Zonal net volumes against the toolbox reference run (v0.9.0, 3 m DTMs, water masks per epoch). Both leave out the cells where
 # 2014 is water. The source must agree within 2 %, the runout within 5 % (its outline crosses the lake and the river,
 # where the two implementations differ in footprint and stable areas).
 rel_tol = { source = 0.02, runout = 0.05 }
