@@ -2,11 +2,14 @@
 
 A ground DTM has no ground under water: lidar returns from a water surface are classed as water (ASPRS class 9) or
 not at all, and the gap-filled DTM bridges the lake or the river from its banks. The DoD then counts the water level
-as ground change. Each epoch gets a water mask on the DTM grid, from the first source available:
+as ground change. Each epoch gets a water mask on the DTM grid, from the first source available (``water_source``):
 
-1. the points of the water classes of that epoch (the 2014 delivery classifies water), counted per cell, closed to
-   bridge the gaps between sparse water returns, small holes filled and a buffer added for the shore cells;
-2. otherwise a polygon drawn for that epoch (the 2013 delivery has no water class: its river is drawn).
+1. a polygon file configured for that epoch, with a buffer for the shore cells (the 2013 delivery has no water class:
+   its river is drawn; the 2014 class 9 mask misses the impoundment lake, where the water returns are too sparse to
+   be bridged: it is polygonised and edited by hand);
+2. otherwise the points of the water classes of that epoch, counted per cell, closed to bridge the gaps between
+   sparse water returns, small holes filled and a buffer added for the shore cells;
+3. otherwise no water.
 
 The DoD then keeps the two cases apart (``dod_water``): where t1 is water the cell leaves the budget, and the change
 it would have added is reported separately; where only t0 was water (a channel since buried by the deposit) the cell
@@ -15,10 +18,19 @@ stays in the budget and is flagged, because the change there is underestimated b
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 from scipy import ndimage
 
 DRY, T1_ONLY, T0_ONLY, BOTH = 0, 1, 2, 3   # classes of the DoD water raster
+
+
+def water_source(n_points: int, polygons: Path | None) -> str:
+    """Water source of an epoch: ``"polygons"`` if a polygon file is configured, else ``"points"``, else ``"none"``."""
+    if polygons is not None:
+        return "polygons"
+    return "points" if n_points > 0 else "none"
 
 
 def _disk(radius_px: int) -> np.ndarray:

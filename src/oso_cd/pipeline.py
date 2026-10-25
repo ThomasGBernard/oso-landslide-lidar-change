@@ -154,7 +154,11 @@ def _rasterize(gdf, column: str | None, grid: dtmm.Grid) -> np.ndarray:
 
 # --------------------------------------------------------------------------------------------- step 2b
 def step_water(cfg: dict, dtms: dict, force: bool = False) -> dict:
-    """Water mask of each epoch on the DTM grid: its water-class points if it has any, else its drawn polygon."""
+    """Water mask of each epoch on the DTM grid: its polygon file if one is configured, else its water-class points.
+
+    The water points are extracted and counted for every epoch (``water_points`` in ``water_summary.json``), also
+    when its polygons are used.
+    """
     import geopandas as gpd
     import laspy
     from pyproj import CRS
@@ -181,15 +185,16 @@ def step_water(cfg: dict, dtms: dict, force: bool = False) -> dict:
         if epoch == "t1" and len(xyz):   # moved like the t1 ground cloud (step 1)
             xyz = registration.apply_transform(xyz, reg["affine"], reg["reduction_point_m"])
         polygons = cfg["paths"].get(f"water_polygons_{epoch}")
-        if len(xyz):
+        kind = water.water_source(len(xyz), polygons)
+        if kind == "polygons":
+            gdf = gpd.read_file(polygons).to_crs(crs.sub_crs_list[0])
+            masks[lab] = water.buffer_mask(_rasterize(gdf, None, grid) > 0, grid.res, w["buffer_m"], valid)
+            source = f"polygons for {lab} ({polygons.name})"
+        elif kind == "points":
             counts = water.count_on_grid(xyz[:, 0], xyz[:, 1], grid)
             masks[lab] = water.mask_from_counts(counts, grid.res, valid, closing_m=w["closing_m"],
                                                 max_hole_m2=w["max_hole_m2"], buffer_m=w["buffer_m"])
             source = f"points of ASPRS classes {w['classes']}"
-        elif polygons is not None:
-            gdf = gpd.read_file(polygons).to_crs(crs.sub_crs_list[0])
-            masks[lab] = water.buffer_mask(_rasterize(gdf, None, grid) > 0, grid.res, w["buffer_m"], valid)
-            source = f"polygon drawn for {lab} ({polygons.name})"
         else:
             masks[lab] = np.zeros(grid.shape, dtype=bool)
             source = "none: no water point and no polygon"
