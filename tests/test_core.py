@@ -1,5 +1,7 @@
 """Tests of the numerical core on synthetic data (numpy / scipy only, no lidar needed)."""
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -155,6 +157,13 @@ def test_water_points_counted_on_grid():
     grid = Grid.from_bounds(0, 0, 4, 3, 1.0)
     counts = water.count_on_grid(np.array([0.2, 0.8, 1.5, -1.0, 4.5]), np.array([2.5, 2.9, 1.5, 2.5, 2.5]), grid)
     assert counts[0, 0] == 2 and counts[1, 1] == 1 and counts.sum() == 3   # points outside the grid ignored
+
+
+def test_water_source_polygons_win_over_points():
+    assert water.water_source(120, Path("water_2014.gpkg")) == "polygons"
+    assert water.water_source(0, Path("water_2013.gpkg")) == "polygons"
+    assert water.water_source(120, None) == "points"
+    assert water.water_source(0, None) == "none"
 
 
 def test_water_mask_closes_gaps_fills_small_holes_keeps_islands():

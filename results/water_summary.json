@@ -1,12 +1,12 @@
 {
   "2013": {
-    "source": "polygon drawn for 2013 (water_2013.gpkg)",
+    "source": "polygons for 2013 (water_2013.gpkg)",
     "water_points": 0,
     "water_area_m2": 173025.0
   },
   "2014": {
-    "source": "points of ASPRS classes [9]",
+    "source": "polygons for 2014 (water_2014.gpkg)",
     "water_points": 666631,
-    "water_area_m2": 203787.0
+    "water_area_m2": 217332.0
   }
 }

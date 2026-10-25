@@ -10,7 +10,8 @@ figures = "figures"
 stable_areas = "inputs/stable_areas.gpkg"         # hand-drawn stable terrain (no change between the surveys)
 zones = "inputs/zones_source_runout.gpkg"         # source and runout zones (polygon_id)
 water_polygons_t0 = "inputs/water_2013.gpkg"    # 2013 river, drawn: the 2013 delivery has no water class
-reference_volumes = "results/reference/zonal_volumes_toolbox_v0.9.0_3m.csv"
+water_polygons_t1 = "inputs/water_2014.gpkg"    # class 9 mask edited by hand: lake returns too sparse
+reference_volumes = "results/reference/zonal_volumes_toolbox_v0.9.1_3m.csv"
 
 [labels]
 t0 = "2013"
@@ -39,7 +40,8 @@ footprint_cell_m = 6.0                    # a multiple of the 3 m cell
 footprint_closing_cells = 3
 
 [water]
-# Water mask of each epoch: points of these ASPRS classes if the epoch has any (2014), else its drawn polygon (2013).
+# Water mask of each epoch: its polygon file (water_polygons_<epoch> in [paths]) if one is configured (2013, 2014),
+# else the points of these ASPRS classes, else no water.
 classes = [9]                             # ASPRS water
 closing_m = 2.0                           # closes the gaps between sparse water returns
 max_hole_m2 = 50.0                        # holes in the water up to this area are filled (larger: islands kept)
@@ -54,8 +56,8 @@ lod_k = 1.96                              # 95 % confidence
 conservative_interp_bias_m = 1.0          # stated as a separate, conservative uncertainty term
 
 [validation]
-# Zonal net volumes against the toolbox reference run (v0.9.0, 3 m DTMs, water masks per epoch). Both leave out the cells where
-# 2014 is water. The source must agree within 2 %, the runout within 5 % (its outline crosses the lake and the river,
-# where the two implementations differ in footprint and stable areas).
+# Zonal net volumes against the toolbox reference run (v0.9.1, 3 m DTMs, 2014 water from the hand-edited polygons).
+# Both leave out the cells where 2014 is water. The source must agree within 2 %, the runout within 5 % (its outline
+# crosses the lake and the river, where the two implementations differ in footprint and stable areas).
 rel_tol = { source = 0.02, runout = 0.05 }
 notes = {}
