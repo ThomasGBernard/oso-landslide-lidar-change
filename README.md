@@ -59,17 +59,19 @@ absorbed by the registration on stable terrain (next section).
 4. **Error model** from 8 hand-drawn stable areas (about 0.66 km², 66,500 cells of 3 m), where the true change is zero (after
    Hugonnet et al., 2022, with robust NMAD statistics after Höhle and Höhle, 2009):
    - slope term σ_DoD(θ) = √(a² + (b·tanθ)²) fitted on measured cells: a = 0.076 m, b = 0.373 m;
-   - interpolation term as a function of the distance to the nearest measured cell (at 3 m only 5,979 stable
-     cells are interpolated, too few for distance bins: one constant, 0.18 m, is used);
+   - interpolation term as a function of the distance to the nearest measured cell (at 3 m, 5,877 of the 5,979
+     interpolated stable cells lie 2–4 m from a measured cell, so only one distance bin can be fitted: one constant,
+     0.18 m, is used);
    - systematic error σ_sys = 0.021 m, the spread of the per-area medians;
    - cells steeper than 45° get no σ and never count as change.
 5. **Water.** A ground DTM has no ground under water: the gap-filled DTM bridges the lake and the river from their
    banks, and the DoD would count the water level as deposit. The 2014 delivery classifies water (ASPRS class 9,
    667,000 points), but where the lake returns are too sparse to be bridged its mask misses water: the class 9 mask
    (gaps between sparse returns closed, 1 m buffer for the shore) was polygonised and the missed water drawn by
-   hand (`inputs/water_2014.gpkg`). The 2013 delivery has no water class, so its river channel was drawn (`inputs/water_2013.gpkg`).
-   Cells where 2014 is water leave the budget and are reported apart; cells that were water in 2013 only (the old
-   channel, now under the deposit) stay in the budget and are flagged (`src/oso_cd/water.py`).
+   hand (`inputs/water_2014.gpkg`). The 2013 delivery has no water class, so its river channel was drawn
+   (`inputs/water_2013.gpkg`). Cells where 2014 is water leave the budget and are reported apart; cells that were
+   water in 2013 only (the old channel, now under the deposit) stay in the budget and are flagged
+   (`src/oso_cd/water.py`).
 6. **DoD and Level of Detection.** ΔZ = Z₂₀₁₄ − Z₂₀₁₃ is significant where |ΔZ| > 1.96·√(σ₀² + σ₁²), the 95 %
    threshold of Brasington et al. (2003), Lane et al. (2003) and Wheaton et al. (2010). Median LoD: 0.22 m.
 7. **Budget by zone.** Source zone (behind the USGS headscarp) and runout zone (USGS approximate deposit extent,
@@ -77,8 +79,11 @@ absorbed by the registration on stable terrain (next section).
 
 ![Error model](figures/error_model.png)
 
-On the stable areas the DoD has an NMAD of 0.102 m on measured cells and a median offset of −0.028 m, in line with
-the 0.05–0.13 m that Anderson et al. (2017) report for the same surveys.
+On the stable areas the DoD has an NMAD of 0.102 m on measured cells, in line with the 0.05–0.13 m that Anderson et
+al. (2017) report for the same surveys. Its median offset, −0.028 m, lies just outside their systematic range (−0.009
+to +0.044 m) and varies between the areas (per-area medians −0.116 to +0.003 m); it is not removed. Applied to every
+significant cell, an offset of this size would move the volumes by about 0.02 Mm³ in the runout and 0.004 Mm³ in the
+source, the size of their systematic terms.
 
 ## Results
 
@@ -111,14 +116,16 @@ depends on the choice, but how much of it is measured does:
 | | 1 m (v1.1.0 of this repository) | 3 m (this version) |
 |---|---|---|
 | Source net | −3.89 Mm³ ± 0.08 | −3.94 Mm³ ± 0.02 |
-| Runout net | +3.44 Mm³ ± 0.22 | +3.39 Mm³ ± 0.04 |
+| Runout net | +3.44 Mm³ ± 0.22 | +3.36 Mm³ ± 0.03 |
 | Interpolated share of the net volume, source / runout | 65 % / 23 % | 18 % / 2 % |
 | 2013 DTM cells measured | 64 % | 95 % |
-| Median LoD | 0.33 m | 0.17 m |
+| Median LoD | 0.33 m | 0.22 m |
 
-The volumes move by about 1.4 %, well inside the 1 m uncertainty; the stated uncertainty falls by a factor of four to
-six because the conservative interpolation term shrinks with the interpolated area. 3 m cells smooth features of a
-few metres (scarp edges, the narrowest channels), which does not affect volumes of this size.
+The volumes move by 1.4 % (source) and 2.4 % (runout), well inside the 1 m uncertainty. With the same water masks
+and stable areas (v1.2.0), the runout moved by 1.4 % as well; the rest comes from the 2014 lake water and the
+redrawn stable areas of this version, not from the cell size. The stated uncertainty falls by a factor of four to six because the conservative
+interpolation term shrinks with the interpolated area. 3 m cells smooth features of a few metres (scarp edges, the
+narrowest channels), which does not affect volumes of this size.
 
 ![Budget against published values](figures/budget_vs_published.png)
 
@@ -154,14 +161,16 @@ under the forest, whereas the DoD fills those cells.
 - The zone outlines are approximate (the USGS runout extent was mapped from news photographs) and their effect on the
   volumes is not quantified.
 - The conservative interpolation term bounds the interpolated part but is not a statistical confidence interval.
-  At 3 m the interpolation error on stable terrain rests on only 5,979 cells (NMAD 0.21 m), so it is used as one
-  constant, not as a function of the distance to a measured cell.
+  At 3 m almost all interpolated stable cells (5,877 of 5,979, NMAD 0.21 m) lie 2–4 m from a measured cell, so the
+  interpolation error is used as one constant, not as a function of the distance to a measured cell; cells farther
+  from a measured cell (up to 38 m in 2014) get the same value.
 - 3 m cells smooth features of a few metres; the 1 m results (v1.1.0) are kept in the git history for comparison.
 - The 2014 cloud mixes flights of up to three days; any change between them inside the slide is part of the result.
 - Water is left out, not filled: the impoundment lake (a water surface at 87.6 m in 2014, no ground return) falls
-  outside the survey footprint, and the 2014 river cells are masked from their class 9 returns plus water drawn by hand where
-  the lake returns are too sparse (`inputs/water_2014.gpkg`), so the runout gain is a lower bound. The deposit buried in the 2013 river channel is underestimated by the 2013 water depth, and the
-  2013 channel outline is hand-drawn.
+  outside the survey footprint, and the 2014 river cells are masked from their class 9 returns plus water drawn by
+  hand where the lake returns are too sparse (`inputs/water_2014.gpkg`), so the runout gain is a lower bound. The
+  deposit buried in the 2013 river channel is underestimated by the 2013 water depth, and the 2013 channel outline is
+  hand-drawn.
 
 ## Reproduce
 
@@ -180,7 +189,7 @@ intermediate products go to the git-ignored `data/work/`. A full run takes about
 |---|---|
 | `src/oso_cd/` | the workflow: `prepare`, `registration`, `dtm`, `water`, `uncertainty`, `dod`, `plots`, `pipeline` |
 | `config/oso.toml` | every parameter of the run |
-| `inputs/` | stable areas, zones and the 2013 river channel (drawn for this study) |
+| `inputs/` | stable areas, zones, the 2013 river channel and the 2014 water (drawn or edited for this study) |
 | `notebooks/` | the executed notebook, step by step |
 | `results/`, `figures/` | published results; `results/reference/` holds the toolbox reference run |
 | `scripts/check_flight_dates.py` | GPS time to flight days |
